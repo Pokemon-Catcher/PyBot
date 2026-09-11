@@ -1,17 +1,27 @@
 import asyncio
 
 from poke_env.player import RandomPlayer
+from poke_env import AccountConfiguration, ShowdownServerConfiguration
+from config import LOGIN,LOGIN_2, PASSWORD, CUSTOM_SERVER
+from stable_baselines3 import PPO
+from agents.policy_player import PolicyPlayer, MaskedActorCriticPolicy, BATTLE_FORMAT
 
 
-async def main():
-    player_1 = RandomPlayer(max_concurrent_battles=1)
-    player_2 = RandomPlayer(max_concurrent_battles=1)
+async def randomPlay():
+    player = RandomPlayer(
+    account_configuration=AccountConfiguration(LOGIN, PASSWORD),
+    server_configuration=CUSTOM_SERVER,
+    battle_format="gen9fusionmonsrandombattle")
+    while True:
+        await player.accept_challenges(None,2)
 
-    await player_1.battle_against(player_2, n_battles=1)
-
-    print(f"Finished battles: {player_1.n_finished_battles}")
-    print(f"Player 1 wins: {player_1.n_won_battles}")
-
+async def aiPlay():
+    ppo = PPO.load("models/self_play_snapshot_1800k")
+    player = PolicyPlayer(avatar="schoolkid-gen4dp",account_configuration=AccountConfiguration(LOGIN_2, PASSWORD),policy=ppo.policy,server_configuration=CUSTOM_SERVER, battle_format=BATTLE_FORMAT)
+    while True:
+        await player.ladder(2)
+        
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    #asyncio.run(randomPlay())
+    asyncio.run(aiPlay())
